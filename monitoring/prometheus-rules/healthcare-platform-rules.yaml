@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: healthcare-platform-rules
+spec:
+  groups:
+    - name: healthcare-platform
+      rules:
+        - alert: HealthcareIngestionErrorsHigh
+          expr: increase(healthcare_rejected_records_total[15m]) > 10
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Healthcare ingestion rejection rate is elevated
+        - alert: HealthcareIngestionStalled
+          expr: sum(increase(healthcare_ingested_records_total[30m])) == 0
+          for: 30m
+          labels:
+            severity: critical
+          annotations:
+            summary: No healthcare records ingested in the last 30 minutes

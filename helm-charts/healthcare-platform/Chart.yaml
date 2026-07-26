@@ -1,0 +1,6 @@
+apiVersion: v2
+name: healthcare-platform
+description: AKS workloads for the Smart Healthcare Analytics Platform.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

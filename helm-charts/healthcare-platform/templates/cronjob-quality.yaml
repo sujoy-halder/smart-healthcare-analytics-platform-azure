@@ -1,0 +1,49 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "healthcare-platform.fullname" . }}-quality-heartbeat
+  labels:
+    {{- include "healthcare-platform.labels" . | nindent 4 }}
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "healthcare-platform.selectorLabels" . | nindent 12 }}
+            app.kubernetes.io/component: quality-heartbeat
+            azure.workload.identity/use: "true"
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: {{ .Values.serviceAccount.name }}
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: heartbeat
+              image: "{{ .Values.global.imageRegistry }}/{{ .Values.etlService.image }}:{{ .Values.global.imageTag }}"
+              imagePullPolicy: {{ .Values.global.pullPolicy }}
+              command: ["python", "-m", "app.worker"]
+              args: ["--source-type", "ehr", "--once"]
+              envFrom:
+                - configMapRef:
+                    name: {{ include "healthcare-platform.fullname" . }}-config
+              env:
+                - name: LOCAL_OUTBOX_PATH
+                  value: /tmp/local_outbox
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}

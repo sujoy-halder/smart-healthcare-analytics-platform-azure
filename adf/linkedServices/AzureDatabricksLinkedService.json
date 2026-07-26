@@ -1,0 +1,20 @@
+{
+  "name": "AzureDatabricksLinkedService",
+  "properties": {
+    "type": "AzureDatabricks",
+    "typeProperties": {
+      "domain": "<DATABRICKS_WORKSPACE_URL>",
+      "authentication": "MSI",
+      "workspaceResourceId": "/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP_NAME>/providers/Microsoft.Databricks/workspaces/<DATABRICKS_WORKSPACE_NAME>",
+      "existingClusterId": "<DATABRICKS_CLUSTER_ID>"
+    },
+    "connectVia": {
+      "referenceName": "AutoResolveIntegrationRuntime",
+      "type": "IntegrationRuntimeReference"
+    },
+    "annotations": [
+      "managed-identity",
+      "private-link-required"
+    ]
+  }
+}

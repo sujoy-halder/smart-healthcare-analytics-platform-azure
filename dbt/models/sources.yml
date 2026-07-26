@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw
+    database: HEALTHCARE_ANALYTICS
+    schema: RAW
+    tables:
+      - name: PATIENT_OUTCOMES
+      - name: CLAIMS_ANALYTICS

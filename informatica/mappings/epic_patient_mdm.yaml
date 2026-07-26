@@ -1,0 +1,23 @@
+name: epic_patient_mdm
+source_system: Epic
+purpose: Master patient identity ingestion and survivorship.
+source:
+  protocol: fhir
+  resources:
+    - Patient
+    - Encounter
+target:
+  zone: bronze
+  path: bronze/ehr/epic/
+controls:
+  deidentify_fields:
+    - patient_id
+    - mrn
+    - member_id
+  match_rules:
+    - exact: [medical_record_number, date_of_birth]
+    - fuzzy: [name, phone, address]
+  data_quality:
+    - patient_id_not_null
+    - encounter_id_not_null
+    - event_time_iso8601

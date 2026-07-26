@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "healthcare-platform.fullname" . }}-api
+  labels:
+    {{- include "healthcare-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingestion-api
+spec:
+  replicas: {{ .Values.ingestionApi.replicas }}
+  selector:
+    matchLabels:
+      {{- include "healthcare-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: ingestion-api
+  template:
+    metadata:
+      labels:
+        {{- include "healthcare-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: ingestion-api
+        azure.workload.identity/use: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: {{ .Values.ingestionApi.port | quote }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.ingestionApi.image }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ingestionApi.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "healthcare-platform.fullname" . }}-config
+          env:
+            - name: SERVICE_NAME
+              value: healthcare-api
+            - name: LOCAL_OUTBOX_PATH
+              value: /tmp/local_outbox
+            - name: IDENTIFIER_SALT_FILE
+              value: /mnt/secrets-store/identifier-salt
+          volumeMounts:
+            - name: kv-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.ingestionApi.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: kv-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ include "healthcare-platform.fullname" . }}-kv
+        - name: tmp
+          emptyDir: {}

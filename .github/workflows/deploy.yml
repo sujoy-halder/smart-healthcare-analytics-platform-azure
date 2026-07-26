@@ -1,0 +1,112 @@
+name: deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        type: choice
+        options: [dev, prod]
+      apply:
+        description: Apply Terraform and deploy workloads
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, x64, azure-private]
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Azure login
+        uses: azure/login@eec3c95657c1536435858eda1f3ff5437fee8474 # v2.3.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform plan
+        working-directory: terraform/environments/${{ inputs.environment }}
+        env:
+          TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_tenant_id: ${{ secrets.AZURE_TENANT_ID }}
+          TF_VAR_deployer_object_id: ${{ secrets.AZURE_DEPLOYER_OBJECT_ID }}
+          TF_VAR_aks_admin_group_object_ids: ${{ vars.AKS_ADMIN_GROUP_OBJECT_IDS_JSON }}
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_BACKEND_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_BACKEND_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_BACKEND_CONTAINER }}" \
+            -backend-config="key=smart-healthcare-${{ inputs.environment }}.tfstate"
+          terraform plan -out=tfplan
+
+      - name: Terraform apply
+        if: inputs.apply == true
+        working-directory: terraform/environments/${{ inputs.environment }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Read Terraform outputs
+        if: inputs.apply == true
+        id: tfout
+        working-directory: terraform/environments/${{ inputs.environment }}
+        run: |
+          terraform output -json deployment_summary > deployment-summary.json
+          echo "acr=$(jq -r '.acr_login_server' deployment-summary.json)" >> "$GITHUB_OUTPUT"
+          echo "aks=$(jq -r '.aks_name' deployment-summary.json)" >> "$GITHUB_OUTPUT"
+          echo "rg=$(jq -r '.resource_group_name' deployment-summary.json)" >> "$GITHUB_OUTPUT"
+          echo "client_id=$(jq -r '.workload_identity_client_id' deployment-summary.json)" >> "$GITHUB_OUTPUT"
+          echo "kv=$(jq -r '.key_vault_name' deployment-summary.json)" >> "$GITHUB_OUTPUT"
+          echo "eh=$(jq -r '.eventhub_namespace_name' deployment-summary.json)" >> "$GITHUB_OUTPUT"
+          echo "adls=$(jq -r '.adls_account_name' deployment-summary.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Docker login to ACR
+        if: inputs.apply == true
+        run: |
+          ACR_NAME="${{ steps.tfout.outputs.acr }}"
+          az acr login --name "${ACR_NAME%%.azurecr.io}"
+
+      - name: Build and push images
+        if: inputs.apply == true
+        run: |
+          for service in healthcare-api etl-service notification-service; do
+            docker build -f "services/${service}/Dockerfile" -t "${{ steps.tfout.outputs.acr }}/${service}:${{ github.sha }}" .
+            docker push "${{ steps.tfout.outputs.acr }}/${service}:${{ github.sha }}"
+          done
+
+      - name: Setup kubectl
+        if: inputs.apply == true
+        uses: azure/setup-kubectl@3e0aec4d80787158d308d7b364cb1b702e7feb7f # v4.0.0
+
+      - name: Deploy Helm chart
+        if: inputs.apply == true
+        run: |
+          az aks get-credentials --resource-group "${{ steps.tfout.outputs.rg }}" --name "${{ steps.tfout.outputs.aks }}" --overwrite-existing
+          helm upgrade --install healthcare helm-charts/healthcare-platform \
+            --namespace healthcare-${{ inputs.environment }} \
+            --create-namespace \
+            --set global.imageRegistry="${{ steps.tfout.outputs.acr }}" \
+            --set global.imageTag="${{ github.sha }}" \
+            --set azure.tenantId="${{ secrets.AZURE_TENANT_ID }}" \
+            --set azure.workloadIdentityClientId="${{ steps.tfout.outputs.client_id }}" \
+            --set azure.keyVaultName="${{ steps.tfout.outputs.kv }}" \
+            --set azure.eventHubNamespace="${{ steps.tfout.outputs.eh }}" \
+            --set azure.adlsAccountName="${{ steps.tfout.outputs.adls }}"
+
+      - name: Smoke test
+        if: inputs.apply == true
+        run: |
+          kubectl -n healthcare-${{ inputs.environment }} rollout status deploy/healthcare-healthcare-platform-api --timeout=180s
+          kubectl -n healthcare-${{ inputs.environment }} rollout status deploy/healthcare-healthcare-platform-notification --timeout=180s

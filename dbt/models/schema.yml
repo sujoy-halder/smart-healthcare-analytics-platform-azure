@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: dim_patient
+    columns:
+      - name: patient_id
+        tests:
+          - not_null
+          - unique
+  - name: dim_doctor
+    columns:
+      - name: doctor_id
+        tests:
+          - not_null
+          - unique
+  - name: dim_hospital
+    columns:
+      - name: hospital_id
+        tests:
+          - not_null
+          - unique
+  - name: fact_encounters
+    columns:
+      - name: encounter_id
+        tests:
+          - not_null
+  - name: fact_claims
+    columns:
+      - name: payer_id
+        tests:
+          - not_null

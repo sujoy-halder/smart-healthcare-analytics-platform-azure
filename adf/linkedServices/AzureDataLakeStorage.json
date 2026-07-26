@@ -1,0 +1,17 @@
+{
+  "name": "AzureDataLakeStorage",
+  "properties": {
+    "type": "AzureBlobFS",
+    "typeProperties": {
+      "url": "https://<ADLS_ACCOUNT_NAME>.dfs.core.windows.net"
+    },
+    "connectVia": {
+      "referenceName": "AutoResolveIntegrationRuntime",
+      "type": "IntegrationRuntimeReference"
+    },
+    "annotations": [
+      "managed-identity",
+      "private-endpoint-required"
+    ]
+  }
+}

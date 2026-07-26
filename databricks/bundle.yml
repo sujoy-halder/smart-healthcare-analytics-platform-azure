@@ -1,0 +1,45 @@
+bundle:
+  name: smart-healthcare-analytics-platform
+
+variables:
+  adls_account_name:
+    description: ADLS Gen2 account name from Terraform output.
+
+resources:
+  pipelines:
+    healthcare_dlt:
+      name: smart-healthcare-dlt-${bundle.target}
+      continuous: false
+      development: false
+      channel: CURRENT
+      edition: ADVANCED
+      photon: true
+      catalog: healthcare_${bundle.target}
+      target: silver
+      configuration:
+        pipeline.bronze_path: abfss://bronze@${var.adls_account_name}.dfs.core.windows.net
+        pipeline.silver_path: abfss://silver@${var.adls_account_name}.dfs.core.windows.net
+      libraries:
+        - notebook:
+            path: ./dlt/healthcare_bronze_silver_gold.py
+      clusters:
+        - label: default
+          autoscale:
+            min_workers: 2
+            max_workers: 8
+          node_type_id: Standard_D4s_v5
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://REPLACE_WITH_DEV_DATABRICKS_WORKSPACE
+    variables:
+      adls_account_name: REPLACE_WITH_DEV_ADLS_ACCOUNT
+  prod:
+    mode: production
+    workspace:
+      host: https://REPLACE_WITH_PROD_DATABRICKS_WORKSPACE
+    variables:
+      adls_account_name: REPLACE_WITH_PROD_ADLS_ACCOUNT

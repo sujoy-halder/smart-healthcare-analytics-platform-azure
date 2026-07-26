@@ -1,0 +1,27 @@
+{
+  "name": "fifteen_minute_healthcare_ingestion",
+  "properties": {
+    "type": "ScheduleTrigger",
+    "typeProperties": {
+      "recurrence": {
+        "frequency": "Minute",
+        "interval": 15,
+        "startTime": "2026-07-25T00:00:00Z",
+        "timeZone": "UTC"
+      }
+    },
+    "pipelines": [
+      {
+        "pipelineReference": {
+          "referenceName": "healthcare_ingestion_pipeline",
+          "type": "PipelineReference"
+        },
+        "parameters": {
+          "sourceSystem": "hospital-batch",
+          "sourcePath": "landing/hospital-batch/",
+          "bronzePath": "bronze/hospital-batch/"
+        }
+      }
+    ]
+  }
+}

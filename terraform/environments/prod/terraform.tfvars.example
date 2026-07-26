@@ -1,0 +1,11 @@
+subscription_id = "00000000-0000-0000-0000-000000000000"
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+deployer_object_id = "00000000-0000-0000-0000-000000000000"
+
+aks_admin_group_object_ids = [
+  "00000000-0000-0000-0000-000000000000"
+]
+
+location                    = "eastus2"
+name_prefix                 = "shap"
+enable_databricks_workspace = true

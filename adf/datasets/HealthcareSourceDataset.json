@@ -1,0 +1,25 @@
+{
+  "name": "HealthcareSourceDataset",
+  "properties": {
+    "linkedServiceName": {
+      "referenceName": "AzureDataLakeStorage",
+      "type": "LinkedServiceReference"
+    },
+    "parameters": {
+      "path": {
+        "type": "String"
+      }
+    },
+    "type": "Binary",
+    "typeProperties": {
+      "location": {
+        "type": "AzureBlobFSLocation",
+        "fileSystem": "bronze",
+        "folderPath": {
+          "value": "@dataset().path",
+          "type": "Expression"
+        }
+      }
+    }
+  }
+}

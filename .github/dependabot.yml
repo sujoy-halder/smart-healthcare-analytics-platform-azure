@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: pip
+    directory: /services/healthcare-api
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: pip
+    directory: /services/etl-service
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: pip
+    directory: /services/notification-service
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: terraform
+    directory: /terraform/environments/dev
+    schedule:
+      interval: weekly
+  - package-ecosystem: terraform
+    directory: /terraform/environments/prod
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /services/healthcare-api
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /services/etl-service
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /services/notification-service
+    schedule:
+      interval: weekly

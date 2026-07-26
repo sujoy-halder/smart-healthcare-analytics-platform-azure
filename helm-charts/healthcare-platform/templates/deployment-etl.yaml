@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "healthcare-platform.fullname" . }}-etl
+  labels:
+    {{- include "healthcare-platform.labels" . | nindent 4 }}
+    app.kubernetes.io/component: etl-service
+spec:
+  replicas: {{ .Values.etlService.replicas }}
+  selector:
+    matchLabels:
+      {{- include "healthcare-platform.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: etl-service
+  template:
+    metadata:
+      labels:
+        {{- include "healthcare-platform.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: etl-service
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: etl
+          image: "{{ .Values.global.imageRegistry }}/{{ .Values.etlService.image }}:{{ .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.global.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "healthcare-platform.fullname" . }}-config
+          env:
+            - name: SERVICE_NAME
+              value: etl-service
+            - name: LOCAL_OUTBOX_PATH
+              value: /tmp/local_outbox
+          resources:
+            {{- toYaml .Values.etlService.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

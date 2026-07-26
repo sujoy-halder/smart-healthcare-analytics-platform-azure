@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "healthcare-platform.fullname" . }}-config
+  labels:
+    {{- include "healthcare-platform.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Release.Namespace | quote }}
+  EVENTHUB_NAMESPACE: {{ .Values.azure.eventHubNamespace | quote }}
+  EVENTHUB_EHR: "ehr-events"
+  EVENTHUB_LAB_RESULT: "lab-result-events"
+  EVENTHUB_PHARMACY_TRANSACTION: "pharmacy-transaction-events"
+  EVENTHUB_APPOINTMENT: "appointment-events"
+  EVENTHUB_IMAGING_METADATA: "imaging-metadata-events"
+  EVENTHUB_PATIENT_MONITORING: "patient-monitoring-events"
+  EVENTHUB_INSURANCE_CLAIM: "insurance-claim-events"
+  ADLS_ACCOUNT_NAME: {{ .Values.azure.adlsAccountName | quote }}
+  ADLS_BRONZE_FILESYSTEM: "bronze"
+  ADLS_SILVER_FILESYSTEM: "silver"
+  ADLS_GOLD_FILESYSTEM: "gold"

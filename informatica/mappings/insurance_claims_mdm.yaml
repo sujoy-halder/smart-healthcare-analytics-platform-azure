@@ -1,0 +1,22 @@
+name: insurance_claims_mdm
+source_system: Payer and clearinghouse feeds
+purpose: Insurance claim integration and payer MDM.
+source:
+  protocol: sftp_or_api
+  formats:
+    - x12_837
+    - csv
+target:
+  zone: bronze
+  path: bronze/insurance_claim/
+controls:
+  deidentify_fields:
+    - patient_id
+    - member_id
+  data_quality:
+    - claim_id_not_null
+    - payer_id_not_null
+    - billed_amount_non_negative
+  survivorship:
+    - prefer_adjudicated_claim
+    - latest_received_at

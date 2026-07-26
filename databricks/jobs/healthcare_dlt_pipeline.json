@@ -1,0 +1,32 @@
+{
+  "name": "smart-healthcare-dlt-${bundle.target}",
+  "continuous": false,
+  "development": false,
+  "channel": "CURRENT",
+  "edition": "ADVANCED",
+  "photon": true,
+  "catalog": "healthcare_${bundle.target}",
+  "target": "silver",
+  "configuration": {
+    "pipeline.bronze_path": "abfss://bronze@${var.adls_account_name}.dfs.core.windows.net",
+    "pipeline.silver_path": "abfss://silver@${var.adls_account_name}.dfs.core.windows.net"
+  },
+  "libraries": [
+    {
+      "notebook": {
+        "path": "../dlt/healthcare_bronze_silver_gold.py"
+      }
+    }
+  ],
+  "clusters": [
+    {
+      "label": "default",
+      "num_workers": 2,
+      "node_type_id": "Standard_D4s_v5",
+      "autoscale": {
+        "min_workers": 2,
+        "max_workers": 8
+      }
+    }
+  ]
+}

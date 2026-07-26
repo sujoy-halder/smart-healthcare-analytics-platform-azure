@@ -1,0 +1,8 @@
+{
+  "claim_id": "claim-20260725-001",
+  "patient_id": "patient-001",
+  "payer_id": "payer-a",
+  "service_date": "2026-07-24T00:00:00Z",
+  "billed_amount": 1425.5,
+  "claim_status": "submitted"
+}

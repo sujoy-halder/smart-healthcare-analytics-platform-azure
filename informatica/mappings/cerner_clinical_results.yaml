@@ -1,0 +1,20 @@
+name: cerner_clinical_results
+source_system: Cerner
+purpose: Lab and medication result normalization.
+source:
+  protocol: hl7_v2
+  message_types:
+    - ORU_R01
+    - RDE_O11
+target:
+  zone: bronze
+  path: bronze/lab_result/cerner/
+controls:
+  terminology_maps:
+    - loinc
+    - snomed_ct
+    - rxnorm
+  data_quality:
+    - patient_id_not_null
+    - test_code_not_null
+    - non_negative_numeric_result

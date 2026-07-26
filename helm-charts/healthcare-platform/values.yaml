@@ -1,0 +1,66 @@
+global:
+  imageRegistry: shapdevacr.azurecr.io
+  imageTag: "0.1.0"
+  pullPolicy: IfNotPresent
+
+azure:
+  tenantId: "00000000-0000-0000-0000-000000000000"
+  workloadIdentityClientId: "00000000-0000-0000-0000-000000000000"
+  keyVaultName: "kv-shap-dev"
+  eventHubNamespace: "ehns-shap-dev"
+  adlsAccountName: "shapdevlake"
+
+serviceAccount:
+  name: healthcare-workloads
+
+ingestionApi:
+  replicas: 2
+  image: healthcare-api
+  port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+etlService:
+  replicas: 1
+  image: etl-service
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+
+notificationService:
+  replicas: 2
+  image: notification-service
+  port: 8081
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 384Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 8
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+networkPolicy:
+  enabled: true

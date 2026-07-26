@@ -1,0 +1,8 @@
+{
+  "patient_id": "patient-001",
+  "encounter_id": "enc-20260725-001",
+  "event_time": "2026-07-25T09:30:00Z",
+  "diagnosis_code": "I10",
+  "doctor_id": "doctor-014",
+  "hospital_id": "hospital-east"
+}

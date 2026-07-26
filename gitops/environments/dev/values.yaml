@@ -1,0 +1,10 @@
+global:
+  imageRegistry: shapdevacr.azurecr.io
+  imageTag: "0.1.0"
+
+azure:
+  tenantId: "REPLACE_WITH_TENANT_ID"
+  workloadIdentityClientId: "REPLACE_WITH_TERRAFORM_OUTPUT"
+  keyVaultName: "REPLACE_WITH_TERRAFORM_OUTPUT"
+  eventHubNamespace: "REPLACE_WITH_TERRAFORM_OUTPUT"
+  adlsAccountName: "REPLACE_WITH_TERRAFORM_OUTPUT"

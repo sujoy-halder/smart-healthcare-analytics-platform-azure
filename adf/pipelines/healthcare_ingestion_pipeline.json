@@ -1,0 +1,79 @@
+{
+  "name": "healthcare_ingestion_pipeline",
+  "properties": {
+    "description": "Copies batch healthcare extracts into ADLS Gen2 bronze and triggers Databricks DLT processing.",
+    "parameters": {
+      "sourceSystem": {
+        "type": "String"
+      },
+      "sourcePath": {
+        "type": "String"
+      },
+      "bronzePath": {
+        "type": "String"
+      }
+    },
+    "activities": [
+      {
+        "name": "CopySourceToBronze",
+        "type": "Copy",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.02:00:00",
+          "retry": 3,
+          "retryIntervalInSeconds": 60
+        },
+        "typeProperties": {
+          "source": {
+            "type": "BinarySource",
+            "storeSettings": {
+              "type": "AzureBlobFSReadSettings",
+              "recursive": true
+            }
+          },
+          "sink": {
+            "type": "BinarySink",
+            "storeSettings": {
+              "type": "AzureBlobFSWriteSettings"
+            }
+          }
+        },
+        "inputs": [
+          {
+            "referenceName": "HealthcareSourceDataset",
+            "type": "DatasetReference",
+            "parameters": {
+              "path": "@pipeline().parameters.sourcePath"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "referenceName": "BronzeDataset",
+            "type": "DatasetReference",
+            "parameters": {
+              "path": "@pipeline().parameters.bronzePath"
+            }
+          }
+        ]
+      },
+      {
+        "name": "StartDatabricksDLT",
+        "type": "DatabricksNotebook",
+        "dependsOn": [
+          {
+            "activity": "CopySourceToBronze",
+            "dependencyConditions": ["Succeeded"]
+          }
+        ],
+        "typeProperties": {
+          "notebookPath": "/Shared/smart-healthcare/start_dlt_pipeline"
+        },
+        "linkedServiceName": {
+          "referenceName": "AzureDatabricksLinkedService",
+          "type": "LinkedServiceReference"
+        }
+      }
+    ]
+  }
+}
