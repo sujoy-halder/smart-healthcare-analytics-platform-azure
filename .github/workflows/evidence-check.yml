@@ -1,0 +1,36 @@
+name: Evidence Check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  proof-manifest:
+    name: Validate repository evidence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required portfolio proof files
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f README.md
+          test -f docs/evidence/PROJECT_EVIDENCE.md
+          test -f LICENSE || test -f LICENSE.md
+          grep -qi "Cloud Proof Boundary" docs/evidence/PROJECT_EVIDENCE.md
+          grep -qi "Reviewer Validation Commands" docs/evidence/PROJECT_EVIDENCE.md
+
+      - name: Summarize proof surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "## Evidence Check" >> "$GITHUB_STEP_SUMMARY"
+          echo "- README: present" >> "$GITHUB_STEP_SUMMARY"
+          echo "- License: present" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Project evidence manifest: present" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Terraform files: $(find . -name '*.tf' | wc -l | tr -d ' ')" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Python files: $(find . -name '*.py' | wc -l | tr -d ' ')" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Markdown docs: $(find . -name '*.md' | wc -l | tr -d ' ')" >> "$GITHUB_STEP_SUMMARY"
