@@ -1,4 +1,4 @@
 azure-eventhub==5.15.0
 azure-identity==1.23.1
-azure-storage-file-datalake==12.20.0
+azure-storage-file-datalake==12.26.0
 prometheus-client==0.22.1
